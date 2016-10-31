@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 2.8)
+project( SerialTest )
+find_package( OpenCV REQUIRED )
+add_executable( SerialTest ../lib/arduino-serial-lib.c serial_test.cpp )
+target_link_libraries( SerialTest ${OpenCV_LIBS} )

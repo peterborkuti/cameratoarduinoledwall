@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 2.8)
+project( Cam2Arduino )
+find_package( OpenCV REQUIRED )
+add_executable(  Cam2Arduino ../lib/arduino-serial-lib.c cam_to_arduino.cpp )
+target_link_libraries(  Cam2Arduino ${OpenCV_LIBS} )
