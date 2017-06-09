@@ -53,7 +53,7 @@
 const uint8_t numPixels = 64;
 
 /// @brief This says how bright LEDs will be (max is 255)
-const uint8_t maxBrightness = 255;
+const uint8_t maxBrightness = 16;
 
 /// @brief Declare the protocol for your LED strip. Data is wired to port D6,
 /// and the clock to port D5, for APA102 only.
@@ -111,25 +111,66 @@ void setup()
 ////////////////////////////////////////////////////////////////////////////////
 
 int pos = 0;
+int channels = 1;
 
 void loop()
 {
   while (Serial.available() > 0) {
     char c = Serial.read();
-    if ((c == '\n') || (pos > 63)) {
+    if (pos == 0) {
+      if (c == 1 || c == 3) {
+        channels = c;
+      }
+      else { // big trouble, first byte should be number of channels
+        channels = 1;
+      }
+      pos++;
+      continue;
+    }
+    
+    if (c == '\n') {
       LEDstrip.sendPixels(numPixels, pixels);
       Serial.print(pos);
       Serial.print(",");
       Serial.println((byte)c);
-      pos = 0;      
+      pos = 0;
+      continue; 
     }
-    else {
-      pixels[pos].r = c - 1;
-      pixels[pos].g = c - 1;
-      pixels[pos].b = c - 1;
-      pos++;
+    if (pos > channels * 64) {
+      continue;
     }
+
+    int intensity = map(c - 1, 0, 255, 0, maxBrightness);
     
+      if (channels == 1) {
+        int intensity = map(c - 1, 0, 255, 0, maxBrightness / 3);
+        pixels[pos - 1].r = intensity;
+        pixels[pos - 1].g = intensity;
+        pixels[pos - 1].b = intensity;
+      }
+      else {
+        int pixel = (pos -1) / 3;
+        int color = (pos -1) % 3;
+        switch (color) {
+          case 0 :
+            pixels[pixel].b = c - 1;
+            break;
+          case 1 :
+            pixels[pixel].g = c - 1;
+            break;
+          case 2 :
+            pixels[pixel].r = c - 1;
+            int sum = pixels[pixel].b + pixels[pixel].g + pixels[pixel].r;
+            int mul = sum / maxBrightness;
+            if (mul > 1) {
+              pixels[pixel].b /= mul;
+              pixels[pixel].g /= mul;
+              pixels[pixel].r /= mul;
+            }
+            break;
+        }
+      }
+      pos++;
   }
 }
 
